@@ -35,25 +35,44 @@ hidden_spokes =
 EOF
 fi
 
-# Get Artwork
-git clone https://github.com/ublue-os/packages.git /root/packages
-case "${PRETTY_NAME,,}" in
-"aurora"*)
-    mkdir -p /usr/share/anaconda/pixmaps/silverblue
-    cp -r /root/packages/aurora/fedora-logos/src/anaconda/* /usr/share/anaconda/pixmaps/
-    cp -r /root/packages/aurora/fedora-logos/src/anaconda/* /usr/share/anaconda/pixmaps/silverblue/
-    ;;
-"bazzite"*)
-    mkdir -p /usr/share/anaconda/pixmaps/silverblue
-    cp -r /root/packages/bazzite/fedora-logos/* /usr/share/anaconda/pixmaps/
-    ;;
-"bluefin"*)
-    mkdir -p /usr/share/anaconda/pixmaps/silverblue
-    cp -r /root/packages/bluefin/fedora-logos/src/anaconda/* /usr/share/anaconda/pixmaps/
-    cp -r /root/packages/bluefin/fedora-logos/src/anaconda/* /usr/share/anaconda/pixmaps/silverblue/
-    ;;
-esac
-rm -rf /root/packages
+tee /etc/anaconda/profile.d/bluefin.conf <<'EOF'
+# Anaconda configuration file for Bluefin
+
+[Profile]
+# Define the profile.
+profile_id = horizon
+
+[Profile Detection]
+# Match os-release values
+os_id = centos
+
+[Network]
+default_on_boot = FIRST_WIRED_WITH_LINK
+
+[Bootloader]
+efi_dir = fedora
+menu_auto_hide = True
+
+[Storage]
+default_scheme = BTRFS
+btrfs_compression = zstd:1
+default_partitioning =
+    /     (min 1 GiB, max 70 GiB)
+    /home (min 500 MiB, free 50 GiB)
+    /var  (btrfs)
+
+[User Interface]
+custom_stylesheet = /usr/share/anaconda/pixmaps/silverblue/fedora-silverblue.css
+hidden_spokes =
+    NetworkSpoke
+    PasswordSpoke
+    UserSpoke
+hidden_webui_pages =
+    anaconda-screen-accounts
+
+[Localization]
+use_geolocation = False
+EOF
 
 # Variables
 imageref="$(jq -r '."image-ref"' </usr/share/ublue-os/image-info.json)"
