@@ -9,7 +9,7 @@ else
 fi
 sed -i "s/^ID=.*/ID=fedora/" /usr/lib/os-release
 
-dnf insrall -y anaconda-core anaconda-dracut anaconda-gui anaconda-liveinst
+dnf install -y anaconda-core anaconda-dracut anaconda-gui anaconda-liveinst
 
 if [[ "${HIDE_SPOKE:-}" ]]; then
     # Hide Root Spoke
