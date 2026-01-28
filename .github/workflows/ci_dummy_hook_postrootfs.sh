@@ -62,7 +62,7 @@ sed -i 's/^ID=.*/ID=horizon/' /usr/lib/os-release
 
 # Variables
 imageref="$(jq -r '."image-ref"' </usr/share/ublue-os/image-info.json)"
-imageref="${imageref##*://}"
+imageref="${imageref##*//}"
 imagetag="$(jq -r 'if ."image-branch" then ."image-branch" else ."image-tag" end' </usr/share/ublue-os/image-info.json)"
 sbkey='https://github.com/ublue-os/akmods/raw/main/certs/public_key.der'
 
@@ -72,7 +72,7 @@ curl -Lo /run/install/repo/sb_pubkey.der "$sbkey"
 
 # Default Kickstart
 cat <<EOF >>/usr/share/anaconda/interactive-defaults.ks
-ostreecontainer --url=$imageref:$imagetag --transport=containers-storage --no-signature-verification
+ostreecontainer --url=ghcr.io/horizonlinux/horizon:latest --transport=containers-storage --no-signature-verification
 %include /usr/share/anaconda/post-scripts/install-configure-upgrade.ks
 %include /usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks
 %include /usr/share/anaconda/post-scripts/install-flatpaks.ks
