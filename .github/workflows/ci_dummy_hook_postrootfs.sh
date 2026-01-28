@@ -82,7 +82,7 @@ EOF
 # Signed Images
 cat <<EOF >>/usr/share/anaconda/post-scripts/install-configure-upgrade.ks
 %post --erroronfail
-bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry $imageref:$imagetag
+bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry ghcr.io/horizonlinux/horizon:latest
 %end
 EOF
 
