@@ -1,16 +1,99 @@
 #!/usr/bin/env bash
 
-dnf install -y git
-dnf install -y glib2-devel gnome-desktop4-devel gtk4-devel libgweather-devel libadwaita-devel meson ninja
-dnf install -y https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Everything/$(uname -m)/os/Packages/v/vte291-0.82.2-2.fc44.$(uname -m).rpm
-dnf install -y https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Everything/$(uname -m)/os/Packages/v/vte291-devel-0.82.2-2.fc44.$(uname -m).rpm
-dnf install -y https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Everything/$(uname -m)/os/Packages/v/vte291-gtk4-devel-0.82.2-2.fc44.$(uname -m).rpm
-git clone https://gitlab.gnome.org/p3732/os-installer.git /tmp/os-installer
-cd /tmp/os-installer
-meson build
-cd build
-ninja install
-cd /
-dnf remove -y glib2-devel gnome-desktop4-devel gtk4-devel libgweather-devel libadwaita-devel vte291-gtk4-devel vte291-devel meson ninja
-git clone https://github.com/horizonlinux/os-installer-config.git /tmp/osi-config
-mv /tmp/osi-config /etc/os-installer
+# We need to make our own Profiles. This makes anaconda think we are a Kinoite Install
+. /etc/os-release
+if [[ "$ID_LIKE" =~ rhel ]]; then
+    echo 'VARIANT_ID="kinoite"' >>/usr/lib/os-release
+else
+    sed -i "s/^VARIANT_ID=.*/VARIANT_ID=kinoite/" /usr/lib/os-release
+fi
+sed -i "s/^ID=.*/ID=fedora/" /usr/lib/os-release
+
+dnf insrall -y anaconda-core anaconda-dracut anaconda-gui anaconda-liveinst
+
+if [[ "${HIDE_SPOKE:-}" ]]; then
+    # Hide Root Spoke
+    cat <<EOF >>/etc/anaconda/conf.d/anaconda.conf
+[User Interface]
+hidden_spokes =
+    PasswordSpoke
+EOF
+fi
+
+# Variables
+imageref="$(jq -r '."image-ref"' </usr/share/ublue-os/image-info.json)"
+imageref="${imageref##*://}"
+imagetag="$(jq -r 'if ."image-branch" then ."image-branch" else ."image-tag" end' </usr/share/ublue-os/image-info.json)"
+sbkey='https://github.com/ublue-os/akmods/raw/main/certs/public_key.der'
+
+# Secureboot Key Fetch
+mkdir -p /run/install/repo
+curl -Lo /run/install/repo/sb_pubkey.der "$sbkey"
+
+# Default Kickstart
+cat <<EOF >>/usr/share/anaconda/interactive-defaults.ks
+ostreecontainer --url=$imageref:$imagetag --transport=containers-storage --no-signature-verification
+%include /usr/share/anaconda/post-scripts/install-configure-upgrade.ks
+%include /usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks
+%include /usr/share/anaconda/post-scripts/install-flatpaks.ks
+%include /usr/share/anaconda/post-scripts/secureboot-enroll-key.ks
+EOF
+
+# Signed Images
+cat <<EOF >>/usr/share/anaconda/post-scripts/install-configure-upgrade.ks
+%post --erroronfail
+bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry $imageref:$imagetag
+%end
+EOF
+
+# Enroll Secureboot Key
+cat <<EOF >>/usr/share/anaconda/post-scripts/secureboot-enroll-key.ks
+%post --erroronfail --nochroot
+set -oue pipefail
+
+readonly ENROLLMENT_PASSWORD="universalblue"
+readonly SECUREBOOT_KEY="/run/install/repo/sb_pubkey.der"
+
+if [[ ! -d "/sys/firmware/efi" ]]; then
+	echo "EFI mode not detected. Skipping key enrollment."
+	exit 0
+fi
+
+if [[ ! -f "\$SECUREBOOT_KEY" ]]; then
+	echo "Secure boot key not provided: \$SECUREBOOT_KEY"
+	exit 0
+fi
+
+SYS_ID="\$(cat /sys/devices/virtual/dmi/id/product_name)"
+if [[ ":Jupiter:Galileo:" =~ ":\$SYS_ID:" ]]; then
+	echo "Steam Deck hardware detected. Skipping key enrollment."
+	exit 0
+fi
+
+mokutil --timeout -1 || :
+echo -e "\$ENROLLMENT_PASSWORD\n\$ENROLLMENT_PASSWORD" | mokutil --import "\$SECUREBOOT_KEY" || :
+%end
+EOF
+
+# Install Flatpaks
+cat <<'EOF' >>/usr/share/anaconda/post-scripts/install-flatpaks.ks
+%post --erroronfail --nochroot
+deployment="$(ostree rev-parse --repo=/mnt/sysimage/ostree/repo ostree/0/1/0)"
+target="/mnt/sysimage/ostree/deploy/default/deploy/$deployment.0/var/lib/"
+mkdir -p "$target"
+rsync -aAXUHKP /var/lib/flatpak "$target"
+%end
+EOF
+
+# Disable Fedora Flatpak Repo
+cat <<EOF >>/usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks
+%post --erroronfail
+systemctl disable flatpak-add-fedora-repos.service
+%end
+EOF
+
+# Set Anaconda Payload to use flathub
+cat <<EOF >>/etc/anaconda/conf.d/anaconda.conf
+[Payload]
+flatpak_remote = flathub https://dl.flathub.org/repo/
+EOF
