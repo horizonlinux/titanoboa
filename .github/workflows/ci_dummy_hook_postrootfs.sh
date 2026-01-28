@@ -9,7 +9,7 @@ else
 fi
 sed -i "s/^ID=.*/ID=fedora/" /usr/lib/os-release
 
-dnf install -y anaconda-core anaconda-dracut anaconda-gui anaconda-liveinst
+dnf install -y anaconda-core anaconda-dracut anaconda-gui anaconda-liveinst rsync
 
 if [[ "${HIDE_SPOKE:-}" ]]; then
     # Hide Root Spoke
@@ -74,44 +74,13 @@ curl -Lo /run/install/repo/sb_pubkey.der "$sbkey"
 cat <<EOF >>/usr/share/anaconda/interactive-defaults.ks
 ostreecontainer --url=ghcr.io/horizonlinux/horizon:latest --transport=containers-storage --no-signature-verification
 %include /usr/share/anaconda/post-scripts/install-configure-upgrade.ks
-%include /usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks
 %include /usr/share/anaconda/post-scripts/install-flatpaks.ks
-%include /usr/share/anaconda/post-scripts/secureboot-enroll-key.ks
 EOF
 
 # Signed Images
 cat <<EOF >>/usr/share/anaconda/post-scripts/install-configure-upgrade.ks
 %post --erroronfail
 bootc switch --mutate-in-place --enforce-container-sigpolicy --transport registry ghcr.io/horizonlinux/horizon:latest
-%end
-EOF
-
-# Enroll Secureboot Key
-cat <<EOF >>/usr/share/anaconda/post-scripts/secureboot-enroll-key.ks
-%post --erroronfail --nochroot
-set -oue pipefail
-
-readonly ENROLLMENT_PASSWORD="universalblue"
-readonly SECUREBOOT_KEY="/run/install/repo/sb_pubkey.der"
-
-if [[ ! -d "/sys/firmware/efi" ]]; then
-	echo "EFI mode not detected. Skipping key enrollment."
-	exit 0
-fi
-
-if [[ ! -f "\$SECUREBOOT_KEY" ]]; then
-	echo "Secure boot key not provided: \$SECUREBOOT_KEY"
-	exit 0
-fi
-
-SYS_ID="\$(cat /sys/devices/virtual/dmi/id/product_name)"
-if [[ ":Jupiter:Galileo:" =~ ":\$SYS_ID:" ]]; then
-	echo "Steam Deck hardware detected. Skipping key enrollment."
-	exit 0
-fi
-
-mokutil --timeout -1 || :
-echo -e "\$ENROLLMENT_PASSWORD\n\$ENROLLMENT_PASSWORD" | mokutil --import "\$SECUREBOOT_KEY" || :
 %end
 EOF
 
@@ -122,13 +91,6 @@ deployment="$(ostree rev-parse --repo=/mnt/sysimage/ostree/repo ostree/0/1/0)"
 target="/mnt/sysimage/ostree/deploy/default/deploy/$deployment.0/var/lib/"
 mkdir -p "$target"
 rsync -aAXUHKP /var/lib/flatpak "$target"
-%end
-EOF
-
-# Disable Fedora Flatpak Repo
-cat <<EOF >>/usr/share/anaconda/post-scripts/disable-fedora-flatpak.ks
-%post --erroronfail
-systemctl disable flatpak-add-fedora-repos.service
 %end
 EOF
 
