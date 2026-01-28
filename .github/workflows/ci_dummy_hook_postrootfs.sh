@@ -20,6 +20,46 @@ hidden_spokes =
 EOF
 fi
 
+tee /etc/anaconda/profile.d/horizon.conf <<'EOF'
+# Anaconda configuration file for Bluefin LTS
+
+[Profile]
+# Define the profile.
+profile_id = horizon
+
+[Profile Detection]
+# Match os-release values
+os_id = horizon
+
+[Network]
+default_on_boot = FIRST_WIRED_WITH_LINK
+
+[Bootloader]
+efi_dir = centos
+menu_auto_hide = True
+
+[Storage]
+file_system_type = xfs
+default_partitioning =
+    /     (min 5 GiB, max 70 GiB)
+    /var  (min 5 GiB)
+
+[User Interface]
+custom_stylesheet = /usr/share/anaconda/pixmaps/redhat.css
+hidden_spokes =
+    NetworkSpoke
+    PasswordSpoke
+    UserSpoke
+	SubscriptionSpoke
+hidden_webui_pages =
+    anaconda-screen-accounts
+
+[Localization]
+use_geolocation = False
+EOF
+
+sed -i 's/^ID=.*/ID=horizon/' /usr/lib/os-release
+
 # Variables
 imageref="$(jq -r '."image-ref"' </usr/share/ublue-os/image-info.json)"
 imageref="${imageref##*://}"
