@@ -17,7 +17,8 @@ jobs:
         platform: [amd64, arm64]
         image:
           # cool images list :)
-          - ghcr.io/horizonlinux/horizon:latest
+          #- ghcr.io/horizonlinux/horizon:latest
+          - ghcr.io/horizonlinux/test:latest
     steps:
       - name: Maximize Build Space
         if: matrix.platform == 'amd64'
