@@ -9,7 +9,7 @@ arch := arch()
 # Distribution to use for the builder container (for tools and dependencies)
 # Supported values: fedora, centos, almalinux
 # Set via TITANOBOA_BUILDER_DISTRO environment variable (default: fedora)
-builder_distro := env("TITANOBOA_BUILDER_DISTRO", "centos")
+builder_distro := env("TITANOBOA_BUILDER_DISTRO", "fedora")
 ##############################
 
 ### HOOKS SCRIPT PATHS ###
@@ -177,7 +177,11 @@ rootfs-include-container container_image=default_image image=default_image:
     curl -o /etc/containers/registries.d/ghcr.io-horizonlinux.yaml https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/system_files/etc/containers/registries.d/ghcr.io-horizonlinux.yaml
     curl -o /etc/pki/containers/horizonlinux.pub https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/cosign.pub
     mkdir -p /var/lib/containers/storage
-    podman pull {{ container_image || image }}
+    curl --retry 3 -fsSLo "/tmp/brew-install" "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+    touch /.dockerenv
+    env --ignore-environment "PATH=/usr/bin:/bin:/usr/sbin:/sbin" "HOME=/home/linuxbrew" "NONINTERACTIVE=1" /usr/bin/bash /tmp/brew-install
+    /home/linuxbrew/.linuxbrew/bin/brew install podman
+    /home/linuxbrew/.linuxbrew/bin/podman pull {{ container_image || image }}
     dnf install -y fuse-overlayfs"
     chroot "$CMD"
 
