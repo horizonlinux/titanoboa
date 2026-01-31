@@ -18,7 +18,7 @@ jobs:
         image:
           # cool images list :)
           #- ghcr.io/horizonlinux/horizon:latest
-          - ghcr.io/horizonlinux/test:latest
+          - ghcr.io/zirconium-dev/zirconium:latest
     steps:
       - name: Maximize Build Space
         if: matrix.platform == 'amd64'
