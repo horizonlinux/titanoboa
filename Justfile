@@ -170,7 +170,8 @@ rootfs-include-container container_image=default_image image=default_image:
     {{ chroot_function }}
     set -euo pipefail
     CMD="set -xeuo pipefail
-    dnf -y install curl git
+    dnf -y install curl
+    dnf -y reinstall podman
     mkdir -p /etc/containers/registries.d
     mkdir -p /etc/pki/containers
     curl -o /etc/containers/policy.json https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/system_files/etc/containers/policy.json
