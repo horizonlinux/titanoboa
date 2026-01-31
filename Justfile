@@ -3,13 +3,13 @@ PODMAN := which("podman") || require("podman-remote")
 workdir := env("TITANOBOA_WORKDIR", "work")
 isoroot := env("TITANOBOA_ISO_ROOT", "work/iso-root")
 rootfs := workdir/"rootfs"
-default_image := "ghcr.io/ublue-os/bluefin:lts"
+default_image := "ghcr.io/horizonlinux/horizon:latest"
 arch := arch()
 ### BUILDER CONFIGURATION ###
 # Distribution to use for the builder container (for tools and dependencies)
 # Supported values: fedora, centos, almalinux
 # Set via TITANOBOA_BUILDER_DISTRO environment variable (default: fedora)
-builder_distro := env("TITANOBOA_BUILDER_DISTRO", "fedora")
+builder_distro := env("TITANOBOA_BUILDER_DISTRO", "centos")
 ##############################
 
 ### HOOKS SCRIPT PATHS ###
