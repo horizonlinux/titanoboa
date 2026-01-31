@@ -170,18 +170,20 @@ rootfs-include-container container_image=default_image image=default_image:
     {{ chroot_function }}
     set -euo pipefail
     CMD="set -xeuo pipefail
-    dnf -y install curl
+    dnf -y install curl git
     mkdir -p /etc/containers/registries.d
     mkdir -p /etc/pki/containers
     curl -o /etc/containers/policy.json https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/system_files/etc/containers/policy.json
     curl -o /etc/containers/registries.d/ghcr.io-horizonlinux.yaml https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/system_files/etc/containers/registries.d/ghcr.io-horizonlinux.yaml
     curl -o /etc/pki/containers/horizonlinux.pub https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/cosign.pub
     mkdir -p /var/lib/containers/storage
-    curl --retry 3 -fsSLo "/tmp/brew-install" "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
-    touch /.dockerenv
-    env --ignore-environment "PATH=/usr/bin:/bin:/usr/sbin:/sbin" "HOME=/home/linuxbrew" "NONINTERACTIVE=1" /usr/bin/bash /tmp/brew-install
-    /home/linuxbrew/.linuxbrew/bin/brew install podman
-    /home/linuxbrew/.linuxbrew/bin/podman pull {{ container_image || image }}
+    mkdir /var/bin/brew
+    git clone https://github.com/Homebrew/brew /var/brew
+    eval "$(/var/brew/bin/brew shellenv)"
+    brew update --force --quiet
+    chmod -R go-w "$(brew --prefix)/share/zsh"
+    brew install podman
+    /var/brew/bin/podman pull {{ container_image || image }}
     dnf install -y fuse-overlayfs"
     chroot "$CMD"
 
