@@ -177,6 +177,7 @@ rootfs-include-container container_image=default_image image=default_image:
     curl -o /etc/containers/registries.d/ghcr.io-horizonlinux.yaml https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/system_files/etc/containers/registries.d/ghcr.io-horizonlinux.yaml
     curl -o /etc/pki/containers/horizonlinux.pub https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/cosign.pub
     mkdir -p /var/lib/containers/storage
+    podman image inspect --verbose {{ container_image || image }}
     podman pull {{ container_image || image }}
     dnf install -y fuse-overlayfs"
     chroot "$CMD"
