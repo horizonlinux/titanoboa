@@ -171,13 +171,13 @@ rootfs-include-container container_image=default_image image=default_image:
     set -euo pipefail
     CMD="set -xeuo pipefail
     dnf -y install curl
-    dnf -y reinstall podman
     mkdir -p /etc/containers/registries.d
     mkdir -p /etc/pki/containers
-    curl -o /etc/containers/policy.json https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/system_files/etc/containers/policy.json
-    curl -o /etc/containers/registries.d/ghcr.io-horizonlinux.yaml https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/system_files/etc/containers/registries.d/ghcr.io-horizonlinux.yaml
+    rm -rf /etc/containers/policy.json
+    rm -rf /etc/containers/registries.d/ghcr.io-horizonlinux.yaml
     curl -o /etc/pki/containers/horizonlinux.pub https://raw.githubusercontent.com/horizonlinux/horizon/refs/heads/main/cosign.pub
     mkdir -p /var/lib/containers/storage
+    dnf -y reinstall podman
     podman pull {{ container_image || image }}
     dnf install -y fuse-overlayfs"
     chroot "$CMD"
@@ -218,21 +218,21 @@ rootfs-install-livesys-scripts livesys="1":
     $dnf install -y livesys-scripts
 
     # Determine desktop environment. Must match one of /usr/libexec/livesys/sessions.d/livesys-{desktop_env}
-    #desktop_env=""
-    #_session_file="$(find /usr/share/wayland-sessions/ /usr/share/xsessions \
-    #    -maxdepth 1 -type f -not -name '*gamescope*.desktop' -and -name '*.desktop' -printf '%P' -quit)"
-    #case $_session_file in
-    #    budgie*) desktop_env=budgie ;;
-    #    cosmic*) desktop_env=cosmic ;;
-    #    gnome*)  desktop_env=gnome  ;;
-    #    plasma*) desktop_env=kde    ;;
-    #    sway*)   desktop_env=sway   ;;
-    #    xfce*)   desktop_env=xfce   ;;
-    #    *) echo "\
-    #       {{ style('error') }}ERROR[rootfs-install-livesys-scripts]{{ NORMAL }}\
-    #       : No Livesys Environment Found"; exit 1 ;;
-    #esac && unset -v _session_file
-    #sed -i "s/^livesys_session=.*/livesys_session=${desktop_env}/" /etc/sysconfig/livesys
+    desktop_env=""
+    _session_file="$(find /usr/share/wayland-sessions/ /usr/share/xsessions \
+        -maxdepth 1 -type f -not -name '*gamescope*.desktop' -and -name '*.desktop' -printf '%P' -quit)"
+    case $_session_file in
+        budgie*) desktop_env=budgie ;;
+        cosmic*) desktop_env=cosmic ;;
+        gnome*)  desktop_env=gnome  ;;
+        plasma*) desktop_env=kde    ;;
+        sway*)   desktop_env=sway   ;;
+        xfce*)   desktop_env=xfce   ;;
+        *) echo "\
+           {{ style('error') }}ERROR[rootfs-install-livesys-scripts]{{ NORMAL }}\
+           : No Livesys Environment Found"; exit 1 ;;
+    esac && unset -v _session_file
+    sed -i "s/^livesys_session=.*/livesys_session=${desktop_env}/" /etc/sysconfig/livesys
 
     # Enable services
     systemctl enable livesys.service livesys-late.service
