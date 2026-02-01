@@ -171,7 +171,8 @@ rootfs-include-container container_image=default_image image=default_image:
     set -euo pipefail
     CMD="set -xeuo pipefail
     mkdir -p /var/lib/containers/storage
-    podman pull {{ container_image || image }}
+    #podman pull {{ container_image || image }}
+    podman pull ghcr.io/birch-devel/test:latest
     dnf install -y fuse-overlayfs"
     chroot "$CMD"
 
