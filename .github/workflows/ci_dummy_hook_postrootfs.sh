@@ -1,14 +1,4 @@
 #!/usr/bin/env bash
-
-# We need to make our own Profiles. This makes anaconda think we are a Kinoite Install
-. /etc/os-release
-if [[ "$ID_LIKE" =~ rhel ]]; then
-    echo 'VARIANT_ID="kinoite"' >>/usr/lib/os-release
-else
-    sed -i "s/^VARIANT_ID=.*/VARIANT_ID=kinoite/" /usr/lib/os-release
-fi
-sed -i "s/^ID=.*/ID=fedora/" /usr/lib/os-release
-
 dnf install -y anaconda-core anaconda-dracut anaconda-gui anaconda-liveinst rsync
 
 if [[ "${HIDE_SPOKE:-}" ]]; then
@@ -21,7 +11,7 @@ EOF
 fi
 
 tee /etc/anaconda/profile.d/horizon.conf <<'EOF'
-# Anaconda configuration file for Bluefin LTS
+# Anaconda configuration file for Horizon
 
 [Profile]
 # Define the profile.
@@ -36,7 +26,7 @@ default_on_boot = FIRST_WIRED_WITH_LINK
 
 [Bootloader]
 efi_dir = centos
-menu_auto_hide = True
+menu_auto_hide = False
 
 [Storage]
 file_system_type = xfs
@@ -57,18 +47,6 @@ hidden_webui_pages =
 [Localization]
 use_geolocation = False
 EOF
-
-sed -i 's/^ID=.*/ID=horizon/' /usr/lib/os-release
-
-# Variables
-imageref="$(jq -r '."image-ref"' </usr/share/ublue-os/image-info.json)"
-imageref="${imageref##*//}"
-imagetag="$(jq -r 'if ."image-branch" then ."image-branch" else ."image-tag" end' </usr/share/ublue-os/image-info.json)"
-sbkey='https://github.com/ublue-os/akmods/raw/main/certs/public_key.der'
-
-# Secureboot Key Fetch
-mkdir -p /run/install/repo
-curl -Lo /run/install/repo/sb_pubkey.der "$sbkey"
 
 # Default Kickstart
 cat <<EOF >>/usr/share/anaconda/interactive-defaults.ks
