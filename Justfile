@@ -175,7 +175,7 @@ rootfs-include-container container_image=default_image image=default_image:
     chroot "$CMD"
 
 # Install Flatpaks into the live system
-rootfs-include-flatpaks FLATPAKS_FILE="src/flatpaks.example.txt":
+rootfs-include-flatpaks FLATPAKS_FILE="src/flatpaks":
     #!/usr/bin/env bash
     {{ _ci_grouping }}
     {{ if FLATPAKS_FILE =~ '(^$|^(?i)\bnone\b$)' { 'exit 0' } else if path_exists(FLATPAKS_FILE) == 'false' { error('Flatpak file inaccessible: ' + FLATPAKS_FILE) } else { '' } }}
@@ -425,7 +425,7 @@ iso:
 # TODO update this recipe parameters. Make it actually usable
 [no-exit-message]
 [doc('Build a live-iso')]
-@build image=default_image livesys="1" flatpaks_file="src/flatpaks.example.txt" compression="squashfs" extra_kargs="NONE" container_image=image polkit="1": \
+@build image=default_image livesys="1" flatpaks_file="src/flatpaks" compression="squashfs" extra_kargs="NONE" container_image=image polkit="1": \
     checkroot \
     (show-config image livesys flatpaks_file compression extra_kargs container_image polkit) \
     clean \
