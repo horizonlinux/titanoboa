@@ -1,4 +1,6 @@
 org.kde.ark
+io.github.kolunmi.Bazaar
+io.github.shonebinu.Brief
 org.kde.elisa
 org.kde.filelight
 org.mozilla.firefox
@@ -9,4 +11,3 @@ org.kde.okular
 org.kde.skanpage
 org.videolan.VLC
 io.github.flattool.Warehouse
-io.github.shonebinu.Brief
