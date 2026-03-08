@@ -33,7 +33,7 @@ jobs:
         uses: ./
         with:
           livesys: "true"
-          flatpaks-list: ./src/flatpaks.example.txt
+          flatpaks-list: ./src/flatpaks
           container-image: ${{ matrix.container-image }}
           image-ref: ${{ matrix.image }}
           add-polkit: "true"
