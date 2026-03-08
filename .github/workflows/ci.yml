@@ -7,8 +7,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 12 * * 2,4,6,0" # Build ISOs at 12:00 every Tuesday, Thursday, Saturday, and Sunday
-
+    - cron: "0 12 * * WED" # Build ISOs at 12:00 every Wednesday.
 jobs:
   build:
     name: Build ISO
